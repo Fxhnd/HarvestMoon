@@ -132,6 +132,8 @@ if __name__ == '__main__':
     farms = []
     instit = []
     things = []
+    product_instances = []
+    farm_instances = []
 
     stuff = parse_csv("Farm_Data.csv")
 
@@ -139,8 +141,6 @@ if __name__ == '__main__':
         if thing != '':
             things.append(thing.lower())
 
-    for pair in list(itertools.combinations(things, 2)):
-        print create_disjoint_assertion(pair[0], pair[1])
 
     for farm in stuff['farms']:
         farm = re.sub(r'\'', '', farm)
@@ -169,6 +169,7 @@ if __name__ == '__main__':
         for i in range(1, 20):
             product = products[random.randint(0, len(products) - 1)]
             product_instance = product + str(next(COUNT))
+            product_instances.append(product_instance)
 
             print create_type_assertion(product, product_instance)
             print create_property_assertion('sells', farm, product_instance)
@@ -178,3 +179,12 @@ if __name__ == '__main__':
         for i in range(1, 10):
             product = products[random.randint(0, len(products) - 1)]
             print create_property_assertion('buys', ints, product)
+
+    for pair in list(itertools.combinations(things, 2)):
+        print create_disjoint_assertion(pair[0], pair[1])
+
+    for pair in list(itertools.combinations(farm, 2)):
+        print create_disjoint_assertion(pair[0], pair[1])
+
+    for pair in list(itertools.combinations(product_instances, 2)):
+        print create_disjoint_assertion(pair[0], pair[1])
