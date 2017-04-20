@@ -36,13 +36,15 @@ def parse_csv(filepath):
 
             farm, insti, cert, product, typ, c = line.split(',')
 
+            print farm,insti,cert,product,typ,c
+
             farms += [farm.strip()]
             institutions += [insti.strip()]
             certs += [cert.strip()]
             products += [(product.strip(), typ.strip())]
             classes += [c.strip()]
 
-    return {'farms':farms, 'institutions':institutions, 'products':products, 'classes':c}
+    return {'farms':farms, 'institutions':institutions, 'products':products, 'classes':classes}
 
 def create_type_assertion(predicate, thing):
     '''
@@ -104,7 +106,7 @@ def create_disjoint_assertion(one, two):
                        (not ({} x)) 
                      ) 
                   )"""
-    return assertion.format(child, parent)
+    return assertion.format(one, two)
 
 def create_property_assertion(prop, x, y):
     '''
@@ -134,13 +136,11 @@ if __name__ == '__main__':
     stuff = parse_csv("Farm_Data.csv")
 
     for thing in stuff['classes']:
-        print "taco"
-        thing = re.sub(r'\'', '', thing)
-        thing = re.sub(r'\W+', '', thing)
-        things.append(farm.lower())
+        if thing != '':
+            things.append(thing.lower())
 
-    for insti in stuff['institutions']:
-
+    for pair in list(itertools.combinations(things, 2)):
+        print create_disjoint_assertion(pair[0], pair[1])
 
     for farm in stuff['farms']:
         farm = re.sub(r'\'', '', farm)
