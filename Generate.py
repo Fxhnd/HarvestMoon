@@ -9,6 +9,7 @@ import argparse
 import itertools
 import re
 import random
+import itertools
 
 # Nice little autoincrementing utility for ids
 COUNT = itertools.count()
@@ -26,21 +27,22 @@ def parse_csv(filepath):
     institutions = []
     products = []
     certs = []
+    classes = []
 
     lines = []
     with open(filepath, 'r') as f:
         for line in f:
 
-            print line
 
-            farm, insti, cert, product, typ = line.split(',')
+            farm, insti, cert, product, typ, c = line.split(',')
 
             farms += [farm.strip()]
             institutions += [insti.strip()]
             certs += [cert.strip()]
             products += [(product.strip(), typ.strip())]
+            classes += [c.strip()]
 
-    return {'farms':farms, 'institutions':institutions, 'products':products}
+    return {'farms':farms, 'institutions':institutions, 'products':products, 'classes':c}
 
 def create_type_assertion(predicate, thing):
     '''
@@ -49,10 +51,12 @@ def create_type_assertion(predicate, thing):
     :param string predicate, name of unary predicate to instantiate
     :param string thing, name of constant symbol to be asserted upon
     :return string assertion, TPTP formatted assertion
+
+    (Predicate thing)
     '''
 
-    assertion = "fof({},axiom,( {}({}) ) )."
-    return assertion.format(next(COUNT), predicate, thing)
+    assertion = "({} {})"
+    return assertion.format(predicate, thing)
 
 def create_subclass_assertion(child, parent):
     '''
@@ -61,10 +65,46 @@ def create_subclass_assertion(child, parent):
     :param string child, name of child class
     :param string parent, name of parent class
     :return string assertion, TPTP formatted assertion
+
+    (forall (x)
+        (if
+            (child x)
+            (parent x)
+        )
+    )   
     '''
 
-    assertion = "fof({}, axiom, ( ! [X] : ( {}(X) => {}(X))) )."
-    return assertion.format(next(COUNT), child, parent)
+    assertion = """(forall (x) 
+                     (if 
+                       ({} x) 
+                       ({} x) 
+                     ) 
+                  )"""
+    return assertion.format(child, parent)
+
+def create_disjoint_assertion(one, two):
+    '''
+    Create a TPTP string that equivalent to the assertion class(x) => ~class_two(x)
+    
+    :param string child, name of child class
+    :param string parent, name of parent class
+    :return string assertion, TPTP formatted assertion
+
+    (forall (x)
+        (if
+            (child x)
+            (not (parent x))
+        )
+    )   
+    '''
+
+    assertion = """(forall (x) 
+                     (if 
+                       ({} x) 
+                       (not ({} x)) 
+                     ) 
+                  )"""
+    return assertion.format(child, parent)
 
 def create_property_assertion(prop, x, y):
     '''
@@ -74,10 +114,12 @@ def create_property_assertion(prop, x, y):
     :param string x, name of domain class
     :param string y, name of range class
     :return string assertion, TPTP formatted assertion
+
+    (Property x y)
     '''
 
-    assertion = "fof({},axiom,( {}({}, {}) ) )."
-    return assertion.format(next(COUNT), prop, x, y)
+    assertion = "({} {} {})"
+    return assertion.format(prop, x, y)
 
 
 
@@ -87,28 +129,38 @@ if __name__ == '__main__':
     products = []
     farms = []
     instit = []
+    things = []
 
     stuff = parse_csv("Farm_Data.csv")
 
+    for thing in stuff['classes']:
+        print "taco"
+        thing = re.sub(r'\'', '', thing)
+        thing = re.sub(r'\W+', '', thing)
+        things.append(farm.lower())
+
+    for insti in stuff['institutions']:
+
+
     for farm in stuff['farms']:
         farm = re.sub(r'\'', '', farm)
-        farm = re.sub(r'\W+', '_', farm)
-        print create_type_assertion('farm', '"{}"'.format(farm.lower()))
-        farms.append('"{}"'.format(farm.lower()))
+        farm = re.sub(r'\W+', '', farm)
+        print create_type_assertion('farm', farm.lower())
+        farms.append(farm.lower())
 
     for insti in stuff['institutions']:
 
         if insti != '':
             insti = re.sub(r'\'', '', insti)
-            insti = re.sub(r'\W+', '_', insti)
-            print create_type_assertion('institution', '"{}"'.format(insti.lower()))
-            instit.append('"{}"'.format(insti.lower()))
+            insti = re.sub(r'\W+', '', insti)
+            print create_type_assertion('institution', insti.lower())
+            instit.append(insti.lower())
 
     for product, typ in stuff['products']:
 
         if product != '':
             product = re.sub(r'\'', '', product)
-            product = re.sub(r'\W+', '_', product)
+            product = re.sub(r'\W+', '', product)
             print create_subclass_assertion(product.lower(), typ.lower())
             products.append(product.lower())
 
@@ -118,19 +170,11 @@ if __name__ == '__main__':
             product = products[random.randint(0, len(products) - 1)]
             product_instance = product + str(next(COUNT))
 
-            print create_type_assertion(product, '"{}"'.format(product_instance))
-            print create_property_assertion('sells', farm, '"{}"'.format(product_instance))
+            print create_type_assertion(product, product_instance)
+            print create_property_assertion('sells', farm, product_instance)
 
     for ints in instit:
 
         for i in range(1, 10):
             product = products[random.randint(0, len(products) - 1)]
             print create_property_assertion('buys', ints, product)
-
-
-
-
-
-
-    
-
